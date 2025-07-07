@@ -1,0 +1,26 @@
+{
+  "name": "messenger-app",
+  "version": "1.0.0",
+  "description": "A modern messaging app inspired by Facebook Messenger",
+  "main": "server/index.js",
+  "scripts": {
+    "dev": "concurrently \"npm run server:dev\" \"npm run client:dev\"",
+    "server:dev": "cd server && npm run dev",
+    "client:dev": "cd client && npm start",
+    "build": "cd client && npm run build",
+    "server:start": "cd server && npm start",
+    "install:all": "npm install && cd server && npm install && cd ../client && npm install"
+  },
+  "keywords": [
+    "messenger",
+    "chat",
+    "real-time",
+    "react",
+    "socket.io"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "devDependencies": {
+    "concurrently": "^7.6.0"
+  }
+}
