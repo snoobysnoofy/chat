@@ -13,9 +13,21 @@ const ChatDashboard: React.FC = () => {
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
   const [loading, setLoading] = useState(true);
   const [showUserSearch, setShowUserSearch] = useState(false);
+  const [showMobileChat, setShowMobileChat] = useState(false);
 
   useEffect(() => {
     loadConversations();
+
+    // Handle browser back button
+    const handlePopState = () => {
+      const currentPath = window.location.pathname;
+      if (currentPath === '/chat' || currentPath === '/') {
+        setShowMobileChat(false);
+        setSelectedConversation(null);
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
 
     // Set up socket listeners for online status updates
     const handleUserOnline = (userId: number) => {
@@ -76,6 +88,7 @@ const ChatDashboard: React.FC = () => {
     socketService.on('newConversation', handleNewConversation);
 
     return () => {
+      window.removeEventListener('popstate', handlePopState);
       socketService.off('userOnline', handleUserOnline);
       socketService.off('userOffline', handleUserOffline);
       socketService.off('newMessage', handleNewMessage);
@@ -88,6 +101,7 @@ const ChatDashboard: React.FC = () => {
       const conversation = conversations.find(c => c.id === parseInt(conversationId));
       if (conversation) {
         setSelectedConversation(conversation);
+        setShowMobileChat(true); // Show chat on mobile when URL has conversationId
       }
     }
   }, [conversationId, conversations]);
@@ -105,13 +119,21 @@ const ChatDashboard: React.FC = () => {
 
   const handleConversationSelect = (conversation: Conversation) => {
     setSelectedConversation(conversation);
+    setShowMobileChat(true); // Show chat on mobile
     window.history.pushState(null, '', `/chat/${conversation.id}`);
+  };
+
+  const handleBackToConversations = () => {
+    setShowMobileChat(false);
+    setSelectedConversation(null);
+    window.history.pushState(null, '', '/chat');
   };
 
   const handleNewConversation = (conversation: Conversation) => {
     setConversations(prev => [conversation, ...prev]);
     setSelectedConversation(conversation);
     setShowUserSearch(false);
+    setShowMobileChat(true); // Show chat on mobile
     window.history.pushState(null, '', `/chat/${conversation.id}`);
   };
 
@@ -129,10 +151,10 @@ const ChatDashboard: React.FC = () => {
 
   return (
     <div className="h-screen flex bg-gradient-chat">
-      {/* Sidebar */}
-      <div className="w-1/3 border-r border-dark-600 glass-dark flex flex-col">
+      {/* Sidebar - Hidden on mobile when chat is open */}
+      <div className={`w-full md:w-1/3 border-r border-dark-600 glass-dark flex flex-col h-screen ${showMobileChat ? 'hidden md:flex' : 'flex'}`}>
         {/* Header */}
-        <div className="p-4 border-b border-dark-600">
+        <div className="p-4 border-b border-dark-600 flex-shrink-0">
           <div className="flex items-center justify-between">
             <h1 className="text-xl font-bold text-white">Chats</h1>
             <button
@@ -148,7 +170,7 @@ const ChatDashboard: React.FC = () => {
         </div>
 
         {/* Conversation List */}
-        <div className="flex-1 overflow-y-auto scrollbar-thin">
+        <div className="flex-1 overflow-y-auto scrollbar-thin min-h-0">
           <ConversationList
             conversations={conversations}
             selectedConversationId={selectedConversation?.id}
@@ -157,15 +179,52 @@ const ChatDashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* Main Chat Area */}
-      <div className="flex-1 flex flex-col">
+      {/* Main Chat Area - Full width on mobile when chat is open */}
+      <div className={`flex-1 flex flex-col h-screen ${showMobileChat ? 'flex' : 'hidden md:flex'}`}>
         {selectedConversation ? (
-          <ChatWindow
-            conversation={selectedConversation}
-            onUpdateConversations={updateConversationList}
-          />
+          <div className="flex flex-col h-full">
+            {/* Mobile Back Button */}
+            <div className="md:hidden p-4 border-b border-dark-600 glass-dark flex-shrink-0">
+              <div className="flex items-center">
+                <button
+                  onClick={handleBackToConversations}
+                  className="p-2 text-gray-300 hover:text-messenger-blue hover:bg-dark-600 rounded-full transition-all duration-200 hover-lift mr-3"
+                  title="Back to conversations"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                  </svg>
+                </button>
+                <div className="flex items-center">
+                  {selectedConversation.other_user_avatar ? (
+                    <img
+                      src={selectedConversation.other_user_avatar}
+                      alt={selectedConversation.other_user_name}
+                      className="w-8 h-8 rounded-full mr-3"
+                    />
+                  ) : (
+                    <div className="w-8 h-8 rounded-full bg-gradient-message mr-3 flex items-center justify-center text-white text-sm font-medium">
+                      {selectedConversation.other_user_name?.charAt(0).toUpperCase()}
+                    </div>
+                  )}
+                  <div>
+                    <h2 className="text-white font-medium">{selectedConversation.other_user_name}</h2>
+                    <p className="text-xs text-gray-400">
+                      {selectedConversation.other_user_online ? 'Online' : 'Offline'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="flex-1 min-h-0">
+              <ChatWindow
+                conversation={selectedConversation}
+                onUpdateConversations={updateConversationList}
+              />
+            </div>
+          </div>
         ) : (
-          <div className="flex-1 flex items-center justify-center bg-gradient-chat">
+          <div className="hidden md:flex flex-1 items-center justify-center bg-gradient-chat">
             <div className="text-center glass-dark p-8 rounded-2xl shadow-glass">
               <div className="w-16 h-16 mx-auto mb-4 bg-gradient-message rounded-full flex items-center justify-center shadow-message">
                 <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">

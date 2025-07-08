@@ -145,8 +145,8 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ conversation: initialConversati
 
   return (
     <div className="flex flex-col h-full">
-      {/* Header */}
-      <div className="glass-dark border-b border-dark-600 px-6 py-4">
+      {/* Header - Hidden on mobile (mobile header is in ChatDashboard) */}
+      <div className="hidden md:block glass-dark border-b border-dark-600 px-6 py-4 flex-shrink-0">
         <div className="flex items-center">
           <div className="flex-shrink-0">
             <div className="relative">
@@ -191,7 +191,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ conversation: initialConversati
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto bg-gradient-chat scrollbar-thin">
+      <div className="flex-1 overflow-y-auto bg-gradient-chat scrollbar-thin min-h-0">
         {loading ? (
           <div className="flex items-center justify-center h-full">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-messenger-blue"></div>
@@ -224,11 +224,13 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ conversation: initialConversati
       </div>
 
       {/* Message Input */}
-      <MessageInput
-        onSendMessage={handleSendMessage}
-        onTypingStart={handleTypingStart}
-        onTypingStop={handleTypingStop}
-      />
+      <div className="flex-shrink-0">
+        <MessageInput
+          onSendMessage={handleSendMessage}
+          onTypingStart={handleTypingStart}
+          onTypingStop={handleTypingStop}
+        />
+      </div>
     </div>
   );
 };
