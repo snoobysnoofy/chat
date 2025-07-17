@@ -1,17 +1,23 @@
 import axios from 'axios';
 
-// Get the API URL dynamically based on current location
+// Get the API URL from environment variables or fallback to dynamic detection
 const getApiUrl = () => {
+  // Use environment variable if available
   if (process.env.REACT_APP_API_URL) {
     return process.env.REACT_APP_API_URL;
   }
   
-  // If running on localhost, use localhost
+  // Production fallback - use same domain as frontend
+  if (process.env.NODE_ENV === 'production') {
+    return `${window.location.protocol}//${window.location.host}/api`;
+  }
+  
+  // Development fallback
   if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
     return 'http://localhost:5000/api';
   }
   
-  // If running on network IP, use the same IP for backend
+  // Network development fallback
   return `http://${window.location.hostname}:5000/api`;
 };
 
@@ -23,6 +29,7 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  timeout: 10000, // 10 second timeout
 });
 
 // Add token to requests automatically
@@ -39,7 +46,7 @@ api.interceptors.request.use(
   }
 );
 
-// Handle token expiration
+// Handle token expiration and network errors
 api.interceptors.response.use(
   (response) => response,
   (error) => {
@@ -48,6 +55,12 @@ api.interceptors.response.use(
       localStorage.removeItem('user');
       window.location.href = '/login';
     }
+    
+    // Handle network errors
+    if (!error.response) {
+      console.error('Network error:', error.message);
+    }
+    
     return Promise.reject(error);
   }
 );

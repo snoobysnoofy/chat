@@ -6,18 +6,24 @@ class SocketService {
   private listeners: Map<string, Function[]> = new Map();
 
   connect(token: string): void {
-    // Get the server URL dynamically based on current location
+    // Get the server URL from environment variables or fallback to dynamic detection
     const getServerUrl = () => {
+      // Use environment variable if available
       if (process.env.REACT_APP_SOCKET_URL) {
         return process.env.REACT_APP_SOCKET_URL;
       }
       
-      // If running on localhost, use localhost
+      // Production fallback - use same domain as frontend
+      if (process.env.NODE_ENV === 'production') {
+        return `${window.location.protocol}//${window.location.host}`;
+      }
+      
+      // Development fallback
       if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
         return 'http://localhost:5000';
       }
       
-      // If running on network IP, use the same IP for backend
+      // Network development fallback
       return `http://${window.location.hostname}:5000`;
     };
     
@@ -28,7 +34,13 @@ class SocketService {
       auth: {
         token
       },
-      transports: ['websocket', 'polling']
+      transports: ['websocket', 'polling'],
+      upgrade: true,
+      rememberUpgrade: true,
+      timeout: 20000,
+      reconnection: true,
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000
     });
 
     this.socket.on('connect', () => {
