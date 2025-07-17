@@ -18,6 +18,23 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ conversation: initialConversati
   const [loading, setLoading] = useState(true);
   const [typingUsers, setTypingUsers] = useState<TypingUser[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
+
+  // Force scroll to bottom after DOM updates
+  const scrollToBottomAfterUpdate = useCallback(() => {
+    // Use multiple strategies to ensure scrolling works
+    setTimeout(() => {
+      if (messagesEndRef.current) {
+        messagesEndRef.current.scrollIntoView({ behavior: 'auto', block: 'end' });
+      }
+    }, 0);
+    
+    setTimeout(() => {
+      if (messagesEndRef.current) {
+        messagesEndRef.current.scrollIntoView({ behavior: 'smooth', block: 'end' });
+      }
+    }, 100);
+  }, []);
 
   const loadMessages = useCallback(async () => {
     try {
@@ -44,10 +61,25 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ conversation: initialConversati
 
   const handleNewMessage = useCallback((message: Message) => {
     if (message.conversation_id === conversation.id) {
-      setMessages(prev => [...prev, message]);
+      setMessages(prev => {
+        // Check if message already exists to prevent duplicates
+        const existingMessage = prev.find(m => m.id === message.id);
+        if (existingMessage) {
+          console.log('Duplicate message prevented:', message.id);
+          return prev;
+        }
+        
+        console.log('Adding new message:', message.id);
+        const newMessages = [...prev, message];
+        
+        // Always scroll to bottom for new messages
+        scrollToBottomAfterUpdate();
+        
+        return newMessages;
+      });
       onUpdateConversations();
     }
-  }, [conversation.id, onUpdateConversations]);
+  }, [conversation.id, onUpdateConversations, scrollToBottomAfterUpdate]);
 
   const handleUserTyping = useCallback((data: TypingUser) => {
     if (data.conversationId === conversation.id && data.userId !== user?.id) {
@@ -108,15 +140,21 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ conversation: initialConversati
     setConversation(initialConversation);
   }, [initialConversation]);
 
+  // Scroll to bottom when messages change or after loading
   useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
+    if (!loading && messages.length > 0) {
+      scrollToBottomAfterUpdate();
+    }
+  }, [messages, loading, scrollToBottomAfterUpdate]);
 
   const handleSendMessage = async (content: string) => {
     try {
       // Send via socket only - the socket handler will save to DB and broadcast
       socketService.sendMessage(conversation.id, content, conversation.other_user_id);
       onUpdateConversations();
+      
+      // Always scroll to bottom when user sends a message
+      scrollToBottomAfterUpdate();
     } catch (error) {
       console.error('Failed to send message:', error);
     }
@@ -128,10 +166,6 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ conversation: initialConversati
 
   const handleTypingStop = () => {
     socketService.stopTyping(conversation.id);
-  };
-
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
   const getInitials = (name: string) => {
@@ -191,7 +225,10 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ conversation: initialConversati
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto bg-gradient-chat scrollbar-thin min-h-0">
+      <div 
+        ref={messagesContainerRef}
+        className="flex-1 overflow-y-auto bg-gradient-chat scrollbar-thin min-h-0"
+      >
         {loading ? (
           <div className="flex items-center justify-center h-full">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-messenger-blue"></div>

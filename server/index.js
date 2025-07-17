@@ -25,10 +25,13 @@ const io = socketIo(server, {
 
 const PORT = process.env.PORT || 5000;
 
-// Rate limiting
+// Rate limiting - more generous for development
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100 // limit each IP to 100 requests per windowMs
+  max: 1000, // limit each IP to 1000 requests per windowMs
+  message: {
+    error: 'Too many requests from this IP, please try again later.'
+  }
 });
 
 // Middleware
@@ -141,23 +144,6 @@ io.on('connection', (socket) => {
                 ...message,
                 conversation_id: conversationId
               });
-
-              // Also send to all participants' personal rooms for notifications
-              db.all(
-                'SELECT user_id FROM conversation_participants WHERE conversation_id = ?',
-                [conversationId],
-                (err, participants) => {
-                  if (!err && participants) {
-                    participants.forEach(participant => {
-                      io.to(`user_${participant.user_id}`).emit('newMessage', {
-                        ...message,
-                        conversation_id: conversationId
-                      });
-                      console.log(`Socket message sent to user ${participant.user_id} personal room`);
-                    });
-                  }
-                }
-              );
 
               console.log(`Message ${this.lastID} broadcasted to conversation ${conversationId}`);
             }
