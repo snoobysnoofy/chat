@@ -89,7 +89,8 @@ const MessageInput: React.FC<MessageInputProps> = ({
   }, []);
 
   return (
-    <div className="glass-dark border-t border-dark-600 px-6 py-4">
+    <div className="glass-dark border-t border-dark-600 px-4 md:px-6 py-3 md:py-4 shadow-[0_-2px_10px_rgba(0,0,0,0.3)] backdrop-blur-xl
+      supports-[padding:max(0px)]:pb-[calc(env(safe-area-inset-bottom)+12px)]">
       <form onSubmit={handleSubmit} className="flex items-end space-x-4">
         <div className="flex-1">
           <textarea

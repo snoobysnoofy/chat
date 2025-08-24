@@ -6,8 +6,8 @@ import { socketService } from '../services/socketService';
 interface AuthContextType {
   user: User | null;
   token: string | null;
-  login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string, username: string) => Promise<void>;
+  login: (username: string, password: string) => Promise<void>;
+  register: (email: string | undefined, password: string, username: string) => Promise<void>; // email optional
   logout: () => void;
   loading: boolean;
   isAuthenticated: boolean;
@@ -44,10 +44,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setLoading(false);
   }, []);
 
-  const login = async (email: string, password: string): Promise<void> => {
+  const login = async (username: string, password: string): Promise<void> => {
     try {
       const response = await api.post<AuthResponse>('/auth/login', {
-        email,
+        username,
         password,
       });
 
@@ -66,7 +66,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  const register = async (email: string, password: string, username: string): Promise<void> => {
+  const register = async (email: string | undefined, password: string, username: string): Promise<void> => {
     try {
       const response = await api.post<AuthResponse>('/auth/register', {
         email,

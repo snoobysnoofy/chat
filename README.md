@@ -111,7 +111,7 @@ The app is now running successfully! Here's how to test it:
 
 1. Open http://localhost:3000 in your browser
 2. Click "Sign up" to create a new account
-3. Fill in email, username, and password
+3. Fill in username and password (email no longer required; a placeholder is generated)
 4. You'll be automatically logged in
 
 ### Step 2: Test Real-time Messaging
@@ -119,7 +119,7 @@ The app is now running successfully! Here's how to test it:
 1. Open a second browser window/tab in incognito mode
 2. Go to http://localhost:3000 and create another user account
 3. In the first window, click the "+" button to start a new conversation
-4. Search for the second user by username or email
+4. Search for the second user by username (email is still stored but login now uses username only)
 5. Click on the user to start a conversation
 6. Send messages back and forth between the two windows
 7. Notice real-time delivery and typing indicators!
@@ -158,8 +158,8 @@ messenger-app/
 
 ### Authentication
 
-- User registration with email and password
-- Secure login with JWT tokens
+- User registration with username and password (email optional / placeholder)
+- Secure login with username + password (email no longer required for login)
 - Protected routes and API endpoints
 
 ### Messaging

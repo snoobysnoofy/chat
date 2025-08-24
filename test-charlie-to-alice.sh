@@ -10,7 +10,7 @@ BASE_URL="http://localhost:5000/api"
 ALICE_LOGIN=$(curl -s -X POST "$BASE_URL/auth/login" \
   -H "Content-Type: application/json" \
   -d '{
-    "email": "alice@test.com",
+    "username": "alice_test",
     "password": "password123"
   }')
 
@@ -23,7 +23,7 @@ echo "Alice ID: $ALICE_ID"
 BOB_LOGIN=$(curl -s -X POST "$BASE_URL/auth/login" \
   -H "Content-Type: application/json" \
   -d '{
-    "email": "bob@test.com",
+    "username": "bob_test",
     "password": "password123"
   }')
 

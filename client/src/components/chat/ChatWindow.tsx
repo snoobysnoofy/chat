@@ -178,7 +178,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ conversation: initialConversati
   };
 
   return (
-    <div className="flex flex-col h-full">
+  <div className="flex flex-col h-full">
       {/* Header - Hidden on mobile (mobile header is in ChatDashboard) */}
       <div className="hidden md:block glass-dark border-b border-dark-600 px-6 py-4 flex-shrink-0">
         <div className="flex items-center">
@@ -227,7 +227,8 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ conversation: initialConversati
       {/* Messages */}
       <div 
         ref={messagesContainerRef}
-        className="flex-1 overflow-y-auto bg-gradient-chat scrollbar-thin min-h-0"
+        className="flex-1 overflow-y-auto bg-gradient-chat scrollbar-thin min-h-0 pb-28 md:pb-4"
+        style={{ WebkitOverflowScrolling: 'touch' }}
       >
         {loading ? (
           <div className="flex items-center justify-center h-full">
@@ -261,7 +262,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ conversation: initialConversati
       </div>
 
       {/* Message Input */}
-      <div className="flex-shrink-0">
+  <div className="flex-shrink-0 sticky bottom-0 inset-x-0 z-20">
         <MessageInput
           onSendMessage={handleSendMessage}
           onTypingStart={handleTypingStart}

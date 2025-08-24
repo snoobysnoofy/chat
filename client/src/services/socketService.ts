@@ -10,7 +10,13 @@ class SocketService {
     const getServerUrl = () => {
       // Use environment variable if available
       if (process.env.REACT_APP_SOCKET_URL) {
-        return process.env.REACT_APP_SOCKET_URL;
+        const envUrl = process.env.REACT_APP_SOCKET_URL;
+        const accessingViaLan = !['localhost', '127.0.0.1'].includes(window.location.hostname) && /^(10\.|192\.168\.|172\.(1[6-9]|2\d|3[0-1]))/.test(window.location.hostname);
+        const envIsLocalhost = /localhost|127\.0\.0\.1/.test(envUrl);
+        if (accessingViaLan && envIsLocalhost) {
+          return `http://${window.location.hostname}:5000`;
+        }
+        return envUrl;
       }
       
       // Production fallback - use same domain as frontend

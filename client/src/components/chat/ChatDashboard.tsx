@@ -184,7 +184,7 @@ const ChatDashboard: React.FC = () => {
         {selectedConversation ? (
           <div className="flex flex-col h-full">
             {/* Mobile Back Button */}
-            <div className="md:hidden p-4 border-b border-dark-600 glass-dark flex-shrink-0">
+            <div className="md:hidden p-4 border-b border-dark-600 glass-dark flex-shrink-0 sticky top-0 z-30 backdrop-blur-xl">
               <div className="flex items-center">
                 <button
                   onClick={handleBackToConversations}

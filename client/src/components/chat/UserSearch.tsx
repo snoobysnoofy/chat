@@ -97,7 +97,7 @@ const UserSearch: React.FC<UserSearchProps> = ({ onClose, onConversationCreated 
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search users by name or email..."
+              placeholder="username"
               className="block w-full pl-10 pr-3 py-2 bg-dark-700 border border-dark-500 text-white placeholder-gray-400 rounded-lg leading-5 focus:outline-none focus:ring-2 focus:ring-messenger-blue focus:border-transparent transition-all duration-200"
               autoFocus
             />

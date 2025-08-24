@@ -36,7 +36,7 @@ echo "Bob registration: $BOB_RESPONSE"
 ALICE_LOGIN=$(curl -s -X POST "$BASE_URL/auth/login" \
   -H "Content-Type: application/json" \
   -d '{
-    "email": "alice@test.com",
+    "username": "alice_test",
     "password": "password123"
   }')
 
@@ -49,7 +49,7 @@ echo "Alice logged in, token: ${ALICE_TOKEN:0:20}..."
 BOB_LOGIN=$(curl -s -X POST "$BASE_URL/auth/login" \
   -H "Content-Type: application/json" \
   -d '{
-    "email": "bob@test.com",
+    "username": "bob_test",
     "password": "password123"
   }')
 

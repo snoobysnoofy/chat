@@ -15,11 +15,25 @@ const { authenticateSocket } = require('./middleware/auth');
 const app = express();
 const server = http.createServer(app);
 
-// Production-ready CORS configuration
+// Production-ready CORS configuration with LAN dev support
+const devAllowed = ["http://localhost:3000", "http://127.0.0.1:3000"]; // base list
 const corsOptions = {
-  origin: process.env.NODE_ENV === 'production' 
-    ? (process.env.CLIENT_URL ? process.env.CLIENT_URL.split(',') : ['https://your-domain.com'])
-    : ["http://localhost:3000", "http://127.0.0.1:3000"],
+  origin: (origin, callback) => {
+    // Allow non-browser requests (like curl) with no origin
+    if (!origin) return callback(null, true);
+
+    if (process.env.NODE_ENV === 'production') {
+      const allowed = process.env.CLIENT_URL ? process.env.CLIENT_URL.split(',') : ['https://your-domain.com'];
+      return allowed.includes(origin) ? callback(null, true) : callback(new Error('Not allowed by CORS'));
+    }
+
+    // Development: allow localhost, 127.0.0.1 and private LAN ranges on port 3000
+    const privateLanRegex = /^http:\/\/(10\.|192\.168\.|172\.(1[6-9]|2\d|3[0-1])\d*).*:3000$/; // with optional extra digits (though default is :3000)
+    if (devAllowed.includes(origin) || privateLanRegex.test(origin) || /:3000$/.test(origin) && /^(http:\/\/(10\.|192\.168\.|172\.(1[6-9]|2\d|3[0-1])))/.test(origin)) {
+      return callback(null, true);
+    }
+    return callback(new Error('Not allowed by CORS: ' + origin));
+  },
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],

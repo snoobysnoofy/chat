@@ -22,8 +22,8 @@ npm run dev
 
 ### ✅ User Authentication
 
-- **Registration**: Email, username, and password validation
-- **Login**: Secure JWT token-based authentication
+- **Registration**: Username & password (email optional, placeholder generated if omitted)
+- **Login**: Secure JWT token-based authentication (username + password)
 - **Auto-login**: Remember user sessions
 - **Logout**: Clean session cleanup
 
@@ -198,6 +198,11 @@ The app is production-ready with:
 - Health check endpoints
 - Error handling
 - Logging
+
+### LAN Development Notes
+
+- CORS now dynamically allows private network origins (10.x.x.x, 192.168.x.x, 172.16-31.x.x) on port 3000 in development.
+- If the frontend is opened via a LAN IP, the client automatically ignores `REACT_APP_API_URL` / `REACT_APP_SOCKET_URL` pointing at localhost and uses the LAN host instead.
 
 ## 🔄 Future Enhancements
 

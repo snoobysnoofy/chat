@@ -11,9 +11,9 @@ router.post('/register', async (req, res) => {
   try {
     const { email, password, username } = req.body;
 
-    // Validation
-    if (!email || !password || !username) {
-      return res.status(400).json({ error: 'Email, password, and username are required' });
+    // Basic validation (email now optional)
+    if (!username || !password) {
+      return res.status(400).json({ error: 'Username and password are required' });
     }
 
     if (password.length < 6) {
@@ -22,82 +22,101 @@ router.post('/register', async (req, res) => {
 
     const db = getDatabase();
 
-    // Check if user already exists
-    db.get('SELECT id FROM users WHERE email = ?', [email], async (err, row) => {
-      if (err) {
-        console.error('Database error:', err);
-        return res.status(500).json({ error: 'Internal server error' });
-      }
+    // Helper to generate a placeholder email if none provided
+    const generatePlaceholderEmail = (baseName) => {
+      const cleaned = baseName.toLowerCase().replace(/[^a-z0-9_\-]/g, '');
+      return `${cleaned || 'user'}@placeholder.local`;
+    };
 
-      if (row) {
-        return res.status(400).json({ error: 'User with this email already exists' });
-      }
+    const desiredEmail = email && email.trim() !== '' ? email.trim() : generatePlaceholderEmail(username);
 
-      // Hash password
-      const hashedPassword = await bcrypt.hash(password, 10);
-
-      // Insert new user
-      db.run(
-        'INSERT INTO users (email, password, username) VALUES (?, ?, ?)',
-        [email, hashedPassword, username],
-        function(err) {
-          if (err) {
-            console.error('Database error:', err);
-            return res.status(500).json({ error: 'Failed to create user' });
-          }
-
-          // Generate JWT token
-          const token = jwt.sign(
-            { id: this.lastID, email, username },
-            process.env.JWT_SECRET,
-            { expiresIn: '7d' }
-          );
-
-          res.status(201).json({
-            message: 'User created successfully',
-            token,
-            user: {
-              id: this.lastID,
-              email,
-              username,
-              avatar_url: null
-            }
-          });
+    const checkEmailUniqueAndCreate = (candidateEmail, attempt = 0) => {
+      db.get('SELECT id FROM users WHERE email = ?', [candidateEmail], async (err, row) => {
+        if (err) {
+          console.error('Database error:', err);
+          return res.status(500).json({ error: 'Internal server error' });
         }
-      );
-    });
+
+        if (row) {
+          // If user supplied an email explicitly, reject; else try a new placeholder
+          if (email) {
+            return res.status(400).json({ error: 'User with this email already exists' });
+          }
+          if (attempt > 10) {
+            return res.status(500).json({ error: 'Failed to generate unique placeholder email' });
+          }
+            const newCandidate = desiredEmail.replace('@', `_${Math.floor(Math.random()*1000)}@`);
+            return checkEmailUniqueAndCreate(newCandidate, attempt + 1);
+        }
+
+        // Email unique - proceed
+        const hashedPassword = await bcrypt.hash(password, 10);
+        db.run(
+          'INSERT INTO users (email, password, username) VALUES (?, ?, ?)',
+          [candidateEmail, hashedPassword, username],
+          function(err) {
+            if (err) {
+              console.error('Database error:', err);
+              if (err.code === 'SQLITE_CONSTRAINT') {
+                return res.status(400).json({ error: 'Username or email already exists' });
+              }
+              return res.status(500).json({ error: 'Failed to create user' });
+            }
+
+            const token = jwt.sign(
+              { id: this.lastID, email: candidateEmail, username },
+              process.env.JWT_SECRET,
+              { expiresIn: '7d' }
+            );
+
+            res.status(201).json({
+              message: 'User created successfully',
+              token,
+              user: {
+                id: this.lastID,
+                email: candidateEmail,
+                username,
+                avatar_url: null
+              }
+            });
+          }
+        );
+      });
+    };
+
+    checkEmailUniqueAndCreate(desiredEmail);
   } catch (error) {
     console.error('Registration error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
 
-// Login user
+// Login user (username + password instead of email)
 router.post('/login', (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { username, password } = req.body;
 
-    if (!email || !password) {
-      return res.status(400).json({ error: 'Email and password are required' });
+    if (!username || !password) {
+      return res.status(400).json({ error: 'Username and password are required' });
     }
 
     const db = getDatabase();
 
-    // Find user by email
-    db.get('SELECT * FROM users WHERE email = ?', [email], async (err, user) => {
+    // Find user by username
+    db.get('SELECT * FROM users WHERE username = ?', [username], async (err, user) => {
       if (err) {
         console.error('Database error:', err);
         return res.status(500).json({ error: 'Internal server error' });
       }
 
       if (!user) {
-        return res.status(401).json({ error: 'Invalid email or password' });
+        return res.status(401).json({ error: 'Invalid username or password' });
       }
 
       // Check password
       const validPassword = await bcrypt.compare(password, user.password);
       if (!validPassword) {
-        return res.status(401).json({ error: 'Invalid email or password' });
+        return res.status(401).json({ error: 'Invalid username or password' });
       }
 
       // Update last seen and online status

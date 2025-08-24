@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 
 const RegisterPage: React.FC = () => {
-  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [username, setUsername] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -30,7 +29,7 @@ const RegisterPage: React.FC = () => {
     }
 
     try {
-      await register(email, password, username);
+  await register(undefined, password, username);
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -81,22 +80,7 @@ const RegisterPage: React.FC = () => {
                 />
               </div>
               
-              <div>
-                <label htmlFor="email" className="block text-sm font-medium text-blue-100 mb-2">
-                  Email address
-                </label>
-                <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  autoComplete="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-blue-200 focus:outline-none focus:ring-2 focus:ring-messenger-blue focus:border-transparent backdrop-blur-sm"
-                  placeholder="Enter your email"
-                />
-              </div>
+              {/** Email field removed: email is now optional and auto-generated if not provided */}
               
               <div>
                 <label htmlFor="password" className="block text-sm font-medium text-blue-100 mb-2">

@@ -18,6 +18,17 @@ body {
   min-height: 100vh;
 }
 
+/* iOS safe-area support for bottom input bar */
+.safe-bottom-pad {
+  padding-bottom: calc(env(safe-area-inset-bottom) + 12px);
+}
+
+@supports (padding: max(0px)) {
+  .supports-\[padding:max\(0px\)\]:pb-\[calc\(env\(safe-area-inset-bottom\)\+12px\)\] {
+    padding-bottom: calc(env(safe-area-inset-bottom) + 12px) !important;
+  }
+}
+
 #root {
   min-height: 100vh;
 }
