@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -7,6 +7,51 @@ const LoginPage: React.FC = () => {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [waking, setWaking] = useState(false);
+  const [serverStatus, setServerStatus] = useState<'idle' | 'ok' | 'waking' | 'error'>('idle');
+  const [latency, setLatency] = useState<number | null>(null);
+  // Auto ping on mount to show users they may need to wait for cold start
+  useEffect(() => {
+    const autoPing = async () => {
+      setWaking(true);
+      setServerStatus('waking');
+      const start = performance.now();
+      try {
+        const res = await fetch('https://chat-f5sg.onrender.com/api/health', { cache: 'no-store' });
+        if (res.ok) {
+          setServerStatus('ok');
+          setLatency(Math.round(performance.now() - start));
+        } else {
+          setServerStatus('error');
+        }
+      } catch (e) {
+        setServerStatus('error');
+      } finally {
+        setWaking(false);
+      }
+    };
+    autoPing();
+  }, []);
+
+  const wakeServer = async () => {
+    setWaking(true);
+    setServerStatus('waking');
+    setLatency(null);
+    const start = performance.now();
+    try {
+      const res = await fetch('https://chat-f5sg.onrender.com/api/health', { cache: 'no-store' });
+      if (res.ok) {
+        setServerStatus('ok');
+        setLatency(Math.round(performance.now() - start));
+      } else {
+        setServerStatus('error');
+      }
+    } catch (e) {
+      setServerStatus('error');
+    } finally {
+      setWaking(false);
+    }
+  };
 
   const { login } = useAuth();
 
@@ -37,9 +82,28 @@ const LoginPage: React.FC = () => {
             <h2 className="text-3xl font-bold text-white mb-2">
               Welcome Back
             </h2>
-            <p className="text-blue-100">
+            <p className="text-blue-100 mb-4">
               Sign in to continue chatting
             </p>
+            <div className="flex flex-col items-center space-y-2">
+              <button
+                type="button"
+                onClick={wakeServer}
+                disabled={waking}
+                className="px-4 py-2 rounded-lg text-xs font-medium bg-white/10 hover:bg-white/20 text-white border border-white/20 disabled:opacity-50 transition-colors"
+              >
+                {waking ? 'Waking server...' : 'Wake / Check Server'}
+              </button>
+              <div className="text-xs text-blue-200 min-h-[1.25rem]">
+                {serverStatus === 'waking' && 'Contacting server... (Render cold starts can take ~30s)'}
+                {serverStatus === 'ok' && (
+                  <span className="text-green-300">Server online {latency !== null && `(${latency}ms)`}</span>
+                )}
+                {serverStatus === 'error' && (
+                  <span className="text-red-300">Server unreachable. Try again.</span>
+                )}
+              </div>
+            </div>
           </div>
           
           <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
