@@ -87,14 +87,20 @@ app.use(cors(corsOptions));
 app.use(express.json({ limit: '1mb' }));
 
 if (process.env.NODE_ENV === 'production') {
-  app.use(express.static(path.join(__dirname, '../client/build')));
-  
-  // Handle React routing - send all non-API requests to React app
-  app.get('*', (req, res) => {
-    if (!req.path.startsWith('/api')) {
-      res.sendFile(path.join(__dirname, '../client/build', 'index.html'));
-    }
-  });
+  const fs = require('fs');
+  const clientBuildDir = path.join(__dirname, '../client/build');
+  if (fs.existsSync(clientBuildDir)) {
+    app.use(express.static(clientBuildDir));
+    app.get('*', (req, res, next) => {
+      if (!req.path.startsWith('/api')) {
+        return res.sendFile(path.join(clientBuildDir, 'index.html'));
+      }
+      next();
+    });
+    console.log('Serving static client build');
+  } else {
+    console.log('Client build directory not found, skipping static file serving');
+  }
 }
 
 // Routes
