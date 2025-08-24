@@ -4,6 +4,8 @@ const path = require('path');
 const socketIo = require('socket.io');
 const cors = require('cors');
 const rateLimit = require('express-rate-limit');
+const helmet = require('helmet');
+const compression = require('compression');
 require('dotenv').config();
 
 const authRoutes = require('./routes/auth');
@@ -15,28 +17,31 @@ const { authenticateSocket } = require('./middleware/auth');
 const app = express();
 const server = http.createServer(app);
 
-// Production-ready CORS configuration with LAN dev support
-const devAllowed = ["http://localhost:3000", "http://127.0.0.1:3000"]; // base list
+// Deployment domains
+const PROD_CLIENTS = [
+  'https://teal-klepon-e77184.netlify.app',
+  // Add custom domain here later e.g. 'https://chat.yourdomain.com'
+];
+
+// CORS configuration (locked down in production, flexible in dev)
 const corsOptions = {
   origin: (origin, callback) => {
-    // Allow non-browser requests (like curl) with no origin
-    if (!origin) return callback(null, true);
-
+    if (!origin) return callback(null, true); // non-browser or same-origin
     if (process.env.NODE_ENV === 'production') {
-      const allowed = process.env.CLIENT_URL ? process.env.CLIENT_URL.split(',') : ['https://your-domain.com'];
-      return allowed.includes(origin) ? callback(null, true) : callback(new Error('Not allowed by CORS'));
+      return PROD_CLIENTS.includes(origin)
+        ? callback(null, true)
+        : callback(new Error('CORS blocked for origin: ' + origin));
     }
-
-    // Development: allow localhost, 127.0.0.1 and private LAN ranges on port 3000
-    const privateLanRegex = /^http:\/\/(10\.|192\.168\.|172\.(1[6-9]|2\d|3[0-1])\d*).*:3000$/; // with optional extra digits (though default is :3000)
-    if (devAllowed.includes(origin) || privateLanRegex.test(origin) || /:3000$/.test(origin) && /^(http:\/\/(10\.|192\.168\.|172\.(1[6-9]|2\d|3[0-1])))/.test(origin)) {
+    // Dev allow localhost + LAN
+    if (/^http:\/\/(localhost|127\.0\.0\.1):3000$/.test(origin) ||
+        /^http:\/\/(10\.|192\.168\.|172\.(1[6-9]|2\d|3[0-1]))[0-9\.]*:3000$/.test(origin)) {
       return callback(null, true);
     }
-    return callback(new Error('Not allowed by CORS: ' + origin));
+    return callback(new Error('CORS blocked (dev) for origin: ' + origin));
   },
   credentials: true,
-  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"],
+  methods: ['GET','POST','PUT','DELETE','OPTIONS'],
+  allowedHeaders: ['Content-Type','Authorization'],
   optionsSuccessStatus: 200
 };
 
@@ -73,9 +78,13 @@ app.use((req, res, next) => {
 });
 
 // Middleware
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: 'cross-origin' }
+}));
+app.use(compression());
 app.use(limiter);
 app.use(cors(corsOptions));
-app.use(express.json());
+app.use(express.json({ limit: '1mb' }));
 
 if (process.env.NODE_ENV === 'production') {
   app.use(express.static(path.join(__dirname, '../client/build')));

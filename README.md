@@ -44,6 +44,26 @@ A modern, real-time messaging application inspired by Facebook Messenger.
    - Backend API: http://localhost:5000
 
 ## 📱 Network Access (Multi-Device Testing)
+## 🌐 Production Deployment
+
+Current deployed domains:
+- Client (Netlify): https://teal-klepon-e77184.netlify.app/
+- Server (Render): https://chat-f5sg.onrender.com
+
+Environment variables (.env on server):
+```
+NODE_ENV=production
+PORT=5000
+JWT_SECRET=<<strong-random-secret>>
+CLIENT_URL=https://teal-klepon-e77184.netlify.app
+```
+Client production env (already set in `client/.env.production`):
+```
+REACT_APP_API_URL=https://chat-f5sg.onrender.com/api
+REACT_APP_SOCKET_URL=https://chat-f5sg.onrender.com
+```
+For changes, edit those files and rebuild/deploy.
+
 
 To test real-time messaging across multiple devices:
 
